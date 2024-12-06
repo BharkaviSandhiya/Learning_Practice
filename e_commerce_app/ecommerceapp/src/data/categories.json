@@ -1,0 +1,56 @@
+{
+    "categories": [
+      {
+        "id": 1,
+        "name": "Electronics",
+        "slug": "electronics",
+        "image": "https://img.freepik.com/free-photo/workplace-business-modern-male-accessories-laptop-white_155003-1722.jpg?semt=ais_hybrid",
+        "discount": 40,
+        "code": "ELEC40",
+        "subcategories": [
+          {
+            "id": 1,
+            "name": "Smartphones",
+            "slug": "smartphones"
+          },
+          {
+            "id": 2,
+            "name": "Laptops",
+            "slug": "laptops"
+          },
+          {
+            "id": 3,
+            "name": "Audio",
+            "slug": "audio"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Fashion",
+        "slug": "fashion",
+        "image": "https://as1.ftcdn.net/jpg/02/03/20/02/160_F_203200227_R8hg1kdQAApxoxQ5RzBpiiuvkSLIQT7h.jpg",
+        "discount": 50,
+        "code": "FASH50",
+        "subcategories": [
+          {
+            "id": 1,
+            "name": "Men's Wear",
+            "slug": "mens-wear"
+          },
+          {
+            "id": 2,
+            "name": "Women's Wear",
+            "slug": "womens-wear"
+          },
+          {
+            "id": 3,
+            "name": "Kids' Wear",
+            "slug": "kids-wear"
+          }
+        ]
+      }
+    ]
+  }
+  
+  
