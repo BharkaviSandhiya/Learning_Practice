@@ -2,8 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const Account = ({ isLoggedIn, onLogout }) => {
-  // Mock order data (replace with actual data from your backend)
-  const orders = [
+    const orders = [
     { id: 1, date: '2023-05-15', total: 129.99, status: 'Delivered' },
     { id: 2, date: '2023-05-20', total: 79.99, status: 'Shipped' },
     { id: 3, date: '2023-05-25', total: 199.99, status: 'Processing' },

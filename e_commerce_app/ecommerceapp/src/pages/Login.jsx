@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { loginUser } from '../store/slices/authSlice';
-import { FaGoogle, FaEnvelope, FaLock } from 'react-icons/fa';
+import { loginUser, loginWithGoogle } from '../store/slices/authSlice';
+import { FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -14,15 +15,21 @@ const Login = () => {
     e.preventDefault();
     try {
       await dispatch(loginUser({ email, password })).unwrap();
+      toast.success('Logged in successfully!');
       navigate('/');
     } catch (error) {
-      console.error('Failed to log in:', error);
+      toast.error(error.message || 'Failed to log in');
     }
   };
 
   const handleGoogleLogin = async () => {
-    // Implement actual Google login here
-    console.log('Google login clicked');
+    try {
+      await dispatch(loginWithGoogle()).unwrap();
+      toast.success('Logged in with Google successfully!');
+      navigate('/');
+    } catch (error) {
+      toast.error(error.message || 'Failed to log in with Google');
+    }
   };
 
   return (

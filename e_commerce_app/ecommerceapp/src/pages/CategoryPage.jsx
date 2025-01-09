@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import ProductCard from '../components/ProductCard';
-import { products } from '../data/products';
 import { useSelector } from 'react-redux';
+import Breadcrumb from '../components/Breadcrumb';
+import { fetchProducts } from '../services/api';
 
 const CategoryPage = () => {
   const { category, subcategory } = useParams();
@@ -13,8 +13,7 @@ const CategoryPage = () => {
     colors: [],
     rating: 0,
   });
-  const [expandedFilters, setExpandedFilters] = useState(['subcategories', 'priceRange', 'colors', 'rating']);
-  const wishlistItems = useSelector(state => state.wishlist);
+  const wishlistItems = useSelector(state => state.wishlist.items);
 
   const categories = {
     electronics: ['Smartphones', 'Laptops', 'Audio', 'Wearables', 'TVs', 'Smart Home'],
@@ -25,26 +24,15 @@ const CategoryPage = () => {
 
   const colorOptions = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FFA500', '#800080'];
 
+  const currentSubcategories = categories[category?.toLowerCase()] || [];
+
   useEffect(() => {
-    let filtered = products.filter(product => 
-      product.category.toLowerCase() === category.toLowerCase()
-    );
-
-    if (subcategory) {
-      filtered = filtered.filter(product => 
-        product.subcategory.toLowerCase() === subcategory.toLowerCase().replace('-', ' ')
-      );
-    }
-
-    filtered = filtered.filter(product => 
-      product.price >= filters.priceRange[0] &&
-      product.price <= filters.priceRange[1] &&
-      (filters.colors.length === 0 || filters.colors.some(color => product.colors.includes(color))) &&
-      product.rating >= filters.rating
-    );
-
-    setFilteredProducts(filtered);
-  }, [category, subcategory, filters]);
+    const loadProducts = async () => {
+      const products = await fetchProducts(category, subcategory);
+      setFilteredProducts(products);
+    };
+    loadProducts();
+  }, [category, subcategory]);
 
   const handleFilterChange = (filterType, value) => {
     setFilters(prevFilters => ({
@@ -53,59 +41,39 @@ const CategoryPage = () => {
     }));
   };
 
-  const toggleFilter = (filterName) => {
-    setExpandedFilters(prev => 
-      prev.includes(filterName) 
-        ? prev.filter(f => f !== filterName)
-        : [...prev, filterName]
-    );
-  };
-
-  const FilterAccordion = ({ title, name, children }) => (
-    <div className="border-b border-gray-200 py-4">
-      <button
-        className="w-full flex justify-between items-center"
-        onClick={() => toggleFilter(name)}
-      >
-        <span className="font-semibold">{title}</span>
-        {expandedFilters.includes(name) ? <FaChevronUp /> : <FaChevronDown />}
-      </button>
-      {expandedFilters.includes(name) && (
-        <div className="mt-4">
-          {children}
-        </div>
-      )}
-    </div>
-  );
-
   const isInWishlist = (productId) => {
     return wishlistItems.some(item => item.id === productId);
   };
 
   return (
     <div className="container mx-auto my-8">
+      <Breadcrumb category={category} subcategory={subcategory} />
       <h1 className="text-3xl font-bold mb-6 capitalize">{subcategory || category}</h1>
+      
+      {/* Add subcategory navigation */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        {currentSubcategories.map(sub => (
+          <Link
+            key={sub}
+            to={`/category/${category}/${sub.toLowerCase().replace(' ', '-')}`}
+            className={`px-4 py-2 rounded-full ${
+              subcategory === sub.toLowerCase().replace(' ', '-')
+                ? 'bg-primary text-white'
+                : 'bg-gray-100 hover:bg-gray-200'
+            }`}
+          >
+            {sub}
+          </Link>
+        ))}
+      </div>
+
       <div className="flex flex-col md:flex-row">
         <div className="w-full md:w-1/4 mb-4 md:mb-0 md:pr-4">
           <div className="bg-white p-4 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Filters</h2>
             
-            <FilterAccordion title="Subcategories" name="subcategories">
-              <ul className="space-y-2">
-                {categories[category.toLowerCase()].map((sub) => (
-                  <li key={sub}>
-                    <Link
-                      to={`/category/${category.toLowerCase()}/${sub.toLowerCase().replace(' ', '-')}`}
-                      className="text-blue-600 hover:underline"
-                    >
-                      {sub}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </FilterAccordion>
-
-            <FilterAccordion title="Price Range" name="priceRange">
+            <div className="mb-4">
+              <h3 className="font-semibold mb-2">Price Range</h3>
               <input
                 type="range"
                 min="0"
@@ -119,9 +87,10 @@ const CategoryPage = () => {
                 <span>$0</span>
                 <span>${filters.priceRange[1]}</span>
               </div>
-            </FilterAccordion>
+            </div>
 
-            <FilterAccordion title="Colors" name="colors">
+            <div className="mb-4">
+              <h3 className="font-semibold mb-2">Colors</h3>
               <div className="flex flex-wrap">
                 {colorOptions.map(color => (
                   <button
@@ -137,9 +106,10 @@ const CategoryPage = () => {
                   />
                 ))}
               </div>
-            </FilterAccordion>
+            </div>
 
-            <FilterAccordion title="Minimum Rating" name="rating">
+            <div className="mb-4">
+              <h3 className="font-semibold mb-2">Minimum Rating</h3>
               <select
                 value={filters.rating}
                 onChange={(e) => handleFilterChange('rating', Number(e.target.value))}
@@ -151,7 +121,7 @@ const CategoryPage = () => {
                 <option value={2}>2 Stars & Up</option>
                 <option value={1}>1 Star & Up</option>
               </select>
-            </FilterAccordion>
+            </div>
           </div>
         </div>
 
@@ -160,7 +130,7 @@ const CategoryPage = () => {
             {filteredProducts.map(product => (
               <ProductCard
                 key={product.id}
-                {...product}
+                product={product}
                 isInWishlist={isInWishlist(product.id)}
               />
             ))}

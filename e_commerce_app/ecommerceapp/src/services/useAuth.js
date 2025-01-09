@@ -1,58 +1,51 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { loginUser, registerUser, logout } from '../store/slices/authSlice';
+import { toast } from 'react-hot-toast';
 
-// Mock API calls for demonstration purposes
-const mockGoogleLogin = () => Promise.resolve({ name: 'Google User', email: 'user@example.com' });
-const mockGuestLogin = () => Promise.resolve({ name: 'Guest', email: null });
+export const useAuth = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, loading, error, isAuthenticated } = useSelector((state) => state.auth);
 
-export const loginWithGoogle = createAsyncThunk('auth/loginWithGoogle', async (_, thunkAPI) => {
-  try {
-    const user = await mockGoogleLogin();
-    return user;
-  } catch (error) {
-    return thunkAPI.rejectWithValue('Failed to log in with Google');
-  }
-});
+  const login = async (credentials) => {
+    try {
+      await dispatch(loginUser(credentials)).unwrap();
+      const from = location.state?.from?.pathname || '/';
+      navigate(from);
+      toast.success('Welcome back!');
+    } catch (error) {
+      toast.error(error.message || 'Failed to login');
+    }
+  };
 
-export const loginAsGuest = createAsyncThunk('auth/loginAsGuest', async (_, thunkAPI) => {
-  try {
-    const user = await mockGuestLogin();
-    return user;
-  } catch (error) {
-    return thunkAPI.rejectWithValue('Failed to log in as Guest');
-  }
-});
+  const register = async (userData) => {
+    try {
+      await dispatch(registerUser(userData)).unwrap();
+      navigate('/');
+      toast.success('Registration successful!');
+    } catch (error) {
+      toast.error(error.message || 'Failed to register');
+    }
+  };
 
-const authSlice = createSlice({
-  name: 'auth',
-  initialState: {
-    isLoggedIn: false,
-    user: null,
-    error: null,
-  },
-  reducers: {
-    logout: (state) => {
-      state.isLoggedIn = false;
-      state.user = null;
-    },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(loginWithGoogle.fulfilled, (state, action) => {
-        state.isLoggedIn = true;
-        state.user = action.payload;
-      })
-      .addCase(loginWithGoogle.rejected, (state, action) => {
-        state.error = action.payload;
-      })
-      .addCase(loginAsGuest.fulfilled, (state, action) => {
-        state.isLoggedIn = true;
-        state.user = action.payload;
-      })
-      .addCase(loginAsGuest.rejected, (state, action) => {
-        state.error = action.payload;
-      });
-  },
-});
+  const signOut = () => {
+    dispatch(logout());
+    navigate('/login');
+    toast.success('Logged out successfully');
+  };
 
-export const { logout } = authSlice.actions;
-export default authSlice.reducer;
+  return {
+    user,
+    loading,
+    error,
+    isAuthenticated,
+    login,
+    register,
+    logout: signOut
+  };
+};
+
+export default useAuth;
+

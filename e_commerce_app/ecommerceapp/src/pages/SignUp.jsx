@@ -1,23 +1,42 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { registerUser } from '../store/slices/authSlice';
-import { FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
+import { registerUser, loginWithGoogle } from '../store/slices/authSlice';
+import { FaUser, FaEnvelope, FaLock, FaPhone, FaGoogle } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
 
 const SignUp = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone: ''
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSignUp = async (e) => {
     e.preventDefault();
     try {
-      await dispatch(registerUser({ name, email, password })).unwrap();
+      await dispatch(registerUser(formData)).unwrap();
+      toast.success('Account created successfully!');
+      navigate('/login');
+    } catch (error) {
+      toast.error(error.message || 'Failed to create account');
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    try {
+      await dispatch(loginWithGoogle()).unwrap();
+      toast.success('Signed up with Google successfully!');
       navigate('/');
     } catch (error) {
-      console.error('Failed to sign up:', error);
+      toast.error(error.message || 'Failed to sign up with Google');
     }
   };
 
@@ -42,12 +61,11 @@ const SignUp = () => {
                   id="name"
                   name="name"
                   type="text"
-                  autoComplete="name"
                   required
                   className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
                   placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={formData.name}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -68,8 +86,8 @@ const SignUp = () => {
                   required
                   className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
                   placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formData.email}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -90,8 +108,30 @@ const SignUp = () => {
                   required
                   className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
                   placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                Phone Number
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaPhone className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                </div>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  required
+                  className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+                  placeholder="+1 (555) 123-4567"
+                  value={formData.phone}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -101,10 +141,31 @@ const SignUp = () => {
                 type="submit"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                Sign up
+                Sign Up
               </button>
             </div>
           </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <button
+                onClick={handleGoogleSignUp}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                <FaGoogle className="mr-2 h-5 w-5" />
+                Sign up with Google
+              </button>
+            </div>
+          </div>
 
           <p className="mt-6 text-center text-sm text-gray-600">
             Already have an account?{' '}

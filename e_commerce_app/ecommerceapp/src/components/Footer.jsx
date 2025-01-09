@@ -12,7 +12,7 @@ const Footer = () => {
             <ul className="space-y-2">
               <li><Link to="/category/electronics" className="hover:text-gray-300">Electronics</Link></li>
               <li><Link to="/category/fashion" className="hover:text-gray-300">Fashion</Link></li>
-              <li><Link to="/category/home-living" className="hover:text-gray-300">Home & Living</Link></li>
+              <li><Link to="/category/home" className="hover:text-gray-300">Home</Link></li>
               <li><Link to="/category/beauty" className="hover:text-gray-300">Beauty</Link></li>
             </ul>
           </div>
@@ -28,7 +28,7 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">About Us</h3>
             <ul className="space-y-2">
-              <li><Link to="/about" className="hover:text-gray-300">Our Story</Link></li>
+              <li><Link to="/our-story" className="hover:text-gray-300">Our Story</Link></li>
               <li><Link to="/careers" className="hover:text-gray-300">Careers</Link></li>
               <li><Link to="/privacy" className="hover:text-gray-300">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-gray-300">Terms of Service</Link></li>

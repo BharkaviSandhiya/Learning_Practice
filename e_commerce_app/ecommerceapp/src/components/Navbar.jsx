@@ -33,6 +33,10 @@ const Navbar = () => {
     }
   };
 
+  const handleCategoryClick = (categoryName) => {
+    navigate(`/category/${categoryName.toLowerCase()}`);
+  };
+
   return (
     <nav className="bg-white shadow-sm">
       <div className="container mx-auto px-4 py-4">
@@ -46,6 +50,7 @@ const Navbar = () => {
               {categories.map((category) => (
                 <div key={category.name} className="relative group">
                   <button
+                    onClick={() => handleCategoryClick(category.name)}
                     className="flex items-center text-gray-600 hover:text-gray-900"
                   >
                     {category.name}
@@ -83,18 +88,18 @@ const Navbar = () => {
             <div className="flex items-center space-x-4">
               <Link to="/wishlist" className="relative">
                 <FaHeart className="text-2xl text-gray-600" />
-                {wishlistItems.length > 0 && (
+                {wishlistItems.items && wishlistItems.items.length > 0 && (
                   <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                    {wishlistItems.length}
+                    {wishlistItems.items.length}
                   </span>
                 )}
               </Link>
 
               <Link to="/cart" className="relative">
                 <FaShoppingBag className="text-2xl text-gray-600" />
-                {cartItems.length > 0 && (
+                {cartItems.items && cartItems.items.length > 0 && (
                   <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                    {cartItems.length}
+                    {cartItems.items.length}
                   </span>
                 )}
               </Link>

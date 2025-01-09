@@ -1,41 +1,39 @@
 import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation } from 'swiper/modules';
+import { Navigation, Autoplay } from 'swiper/modules';
 import ProductCard from './ProductCard';
-import { products } from '../data/products';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
-const FeaturedProducts = () => {
-  const featuredProducts = products.filter(product => product.featured);
-
+const FeaturedProducts = ({ products }) => {
   return (
-    <div className="featured-products-slider">
-      <Swiper
-        slidesPerView={1}
-        spaceBetween={20}
-        navigation={true}
-        modules={[Navigation]}
-        breakpoints={{
-          640: {
-            slidesPerView: 2,
-          },
-          768: {
-            slidesPerView: 3,
-          },
-          1024: {
-            slidesPerView: 4,
-          },
-        }}
-      >
-        {featuredProducts.map((product) => (
-          <SwiperSlide key={product.id}>
-            <ProductCard product={product} />
-          </SwiperSlide>
-        ))}
-      </Swiper>
-    </div>
+    <Swiper
+      modules={[Navigation, Autoplay]}
+      spaceBetween={20}
+      slidesPerView={1}
+      navigation
+      autoplay={{
+        delay: 3000,
+        disableOnInteraction: false,
+      }}
+      breakpoints={{
+        640: {
+          slidesPerView: 2,
+        },
+        1024: {
+          slidesPerView: 4, 
+        },
+      }}
+      className="featured-products-slider"
+    >
+      {products.map(product => (
+        <SwiperSlide key={product.id} className="max-w-[280px]"> 
+          <ProductCard product={product} />
+        </SwiperSlide>
+      ))}
+    </Swiper>
   );
 };
 
 export default FeaturedProducts;
+

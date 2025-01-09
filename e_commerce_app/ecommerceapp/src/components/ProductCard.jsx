@@ -1,30 +1,36 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { FaHeart } from 'react-icons/fa';
-import { addToWishlist, removeFromWishlist } from '../store/slices/wishlistSlice';
+import { FaHeart, FaTrash } from 'react-icons/fa';
+import { addToWishlistAsync, removeFromWishlistAsync } from '../store/slices/wishlistSlice';
+import { removeFromCart } from '../store/slices/cartSlice';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, isCart = false }) => {
   const dispatch = useDispatch();
-  const wishlistItems = useSelector(state => state.wishlist);
+  const wishlistItems = useSelector(state => state.wishlist.items);
 
   if (!product) {
     return null;
   }
 
-  const isInWishlist = wishlistItems.some(item => item.id === product.id);
+  const isInWishlist = Array.isArray(wishlistItems) && wishlistItems.some(item => item.id === product.id);
 
   const handleToggleWishlist = (e) => {
     e.preventDefault();
     if (isInWishlist) {
-      dispatch(removeFromWishlist(product.id));
+      dispatch(removeFromWishlistAsync(product.id));
     } else {
-      dispatch(addToWishlist(product));
+      dispatch(addToWishlistAsync(product));
     }
   };
 
+  const handleRemoveFromCart = (e) => {
+    e.preventDefault();
+    dispatch(removeFromCart(product.id));
+  };
+
   return (
-    <Link to={`/product/${product.id}`} className="group">
+    <Link to={`/product/${product.title.toLowerCase().replace(/ /g, '-')}`} className="group">
       <div className="relative bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg">
         <img
           src={product.image}
@@ -32,12 +38,12 @@ const ProductCard = ({ product }) => {
           className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
         />
         <button
-          onClick={handleToggleWishlist}
+          onClick={isCart ? handleRemoveFromCart : handleToggleWishlist}
           className={`absolute top-2 right-2 p-2 rounded-full ${
             isInWishlist ? 'bg-red-500 text-white' : 'bg-white text-gray-600'
           } hover:scale-110 transition-all duration-300`}
         >
-          <FaHeart className="w-5 h-5" />
+          {isCart ? <FaTrash className="w-5 h-5" /> : <FaHeart className="w-5 h-5" />}
         </button>
         {product.discount > 0 && (
           <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm">
@@ -64,7 +70,7 @@ const ProductCard = ({ product }) => {
             )}
           </div>
           <div className="flex gap-1">
-            {product.colors.map((color, index) => (
+            {product.colors && product.colors.map((color, index) => (
               <div
                 key={index}
                 className="w-4 h-4 rounded-full border border-gray-300"

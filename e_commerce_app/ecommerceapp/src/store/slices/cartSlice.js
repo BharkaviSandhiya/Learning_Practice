@@ -1,35 +1,92 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
+export const updateCartQuantity = createAsyncThunk(
+  'cart/updateQuantity',
+  async ({ productId, quantity }, { getState, dispatch }) => {
+    try {
+      const state = getState();
+      const item = state.cart.items.find(item => item.id === productId);
+      if (item) {
+        dispatch(cartSlice.actions.updateQuantity({ id: productId, quantity }));
+        return { id: productId, quantity };
+      }
+      throw new Error('Item not found in cart');
+    } catch (error) {
+      throw error;
+    }
+  }
+);
+
+export const removeFromCartAsync = createAsyncThunk(
+  'cart/removeItemAsync',
+  async (productId) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return productId;
+  }
+);
 
 const cartSlice = createSlice({
   name: 'cart',
-  initialState: [],
+  initialState: {
+    items: [],
+    loading: false,
+    error: null
+  },
   reducers: {
     addToCart: (state, action) => {
-      const { id, selectedColor, selectedSize } = action.payload;
-      const existingItem = state.find(item => item.id === id && item.selectedColor === selectedColor && item.selectedSize === selectedSize);
+      const { id, selectedSize, selectedColor } = action.payload;
+      const existingItem = state.items.find(
+        item => item.id === id && 
+        item.selectedSize === selectedSize && 
+        item.selectedColor === selectedColor
+      );
+      
       if (existingItem) {
-        existingItem.quantity += 1;
+        existingItem.quantity += action.payload.quantity || 1;
       } else {
-        state.push({ ...action.payload, quantity: 1 });
+        state.items.push({ ...action.payload, quantity: action.payload.quantity || 1 });
       }
     },
-    removeFromCart: (state, action) => {
-      const { id, selectedColor, selectedSize } = action.payload;
-      return state.filter(item => !(item.id === id && item.selectedColor === selectedColor && item.selectedSize === selectedSize));
+    clearCart: (state) => {
+      state.items = [];
     },
     updateQuantity: (state, action) => {
-      const { id, selectedColor, selectedSize, quantity } = action.payload;
-      const item = state.find(item => item.id === id && item.selectedColor === selectedColor && item.selectedSize === selectedSize);
+      const { id, quantity } = action.payload;
+      const item = state.items.find(item => item.id === id);
       if (item) {
         item.quantity = quantity;
       }
     },
-    clearCart: (state) => {
-      return [];
+    removeFromCart: (state, action) => {
+      state.items = state.items.filter(item => item.id !== action.payload);
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(updateCartQuantity.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateCartQuantity.fulfilled, (state, action) => {
+        state.loading = false;
+      })
+      .addCase(updateCartQuantity.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+      .addCase(removeFromCartAsync.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(removeFromCartAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = state.items.filter(item => item.id !== action.payload);
+      })
+      .addCase(removeFromCartAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      });
   },
 });
 
-export const { addToCart, removeFromCart, updateQuantity, clearCart } = cartSlice.actions;
+export const { addToCart, clearCart, updateQuantity, removeFromCart } = cartSlice.actions;
 export default cartSlice.reducer;
 

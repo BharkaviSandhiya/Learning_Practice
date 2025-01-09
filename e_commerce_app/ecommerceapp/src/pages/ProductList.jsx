@@ -1,35 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams} from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProductsAsync } from '../store/slices/productSlice';
 import ProductCard from '../components/ProductCard';
-import Breadcrumb from '../components/Breadcrumb';
-import { products } from '../data/products';
 import { FaFilter } from 'react-icons/fa';
+import Breadcrumb from '../components/Breadcrumb';
 
 const ProductList = () => {
   const { category, subcategory } = useParams();
+  const dispatch = useDispatch();
+  const { items: products, loading, error } = useSelector(state => state.products);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [priceRange, setPriceRange] = useState([0, 2000]);
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
-  const [selectedRatings, setSelectedRatings] = useState([]);
+  const [selectedDiscounts, setSelectedDiscounts] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    let filtered = products;
-    if (category) {
-      filtered = filtered.filter(p => p.category.toLowerCase() === category.toLowerCase());
-    }
-    if (subcategory) {
-      filtered = filtered.filter(p => p.subcategory.toLowerCase() === subcategory.toLowerCase().replace('-', ' '));
-    }
-    setFilteredProducts(filtered);
-  }, [category, subcategory]);
+    dispatch(fetchProductsAsync({ category, subcategory }));
+  }, [dispatch, category, subcategory]);
 
-  const brands = [...new Set(filteredProducts.map(product => product.brand))];
-  const colors = [...new Set(filteredProducts.flatMap(product => product.colors))];
+  useEffect(() => {
+    if (products) {
+      setFilteredProducts(products);
+    }
+  }, [products]);
 
-  const handlePriceChange = (event, newValue) => {
-    setPriceRange(newValue);
+  const brands = [...new Set(products.map(product => product.brand))];
+  const colors = [...new Set(products.flatMap(product => product.colors))];
+  const discounts = [10, 20, 30, 40, 50];
+
+  const handlePriceChange = (event) => {
+    setPriceRange([0, parseInt(event.target.value)]);
   };
 
   const handleBrandChange = (brand) => {
@@ -44,20 +47,14 @@ const ProductList = () => {
     );
   };
 
-  const handleRatingChange = (rating) => {
-    setSelectedRatings(prev => 
-      prev.includes(rating) ? prev.filter(r => r !== rating) : [...prev, rating]
+  const handleDiscountChange = (discount) => {
+    setSelectedDiscounts(prev => 
+      prev.includes(discount) ? prev.filter(d => d !== discount) : [...prev, discount]
     );
   };
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = products;
-    if (category) {
-      filtered = filtered.filter(p => p.category.toLowerCase() === category.toLowerCase());
-    }
-    if (subcategory) {
-      filtered = filtered.filter(p => p.subcategory.toLowerCase() === subcategory.toLowerCase().replace('-', ' '));
-    }
     
     if (selectedBrands.length > 0) {
       filtered = filtered.filter(product => selectedBrands.includes(product.brand));
@@ -67,18 +64,29 @@ const ProductList = () => {
       filtered = filtered.filter(product => product.colors.some(color => selectedColors.includes(color)));
     }
     
-    filtered = filtered.filter(product => product.price >= priceRange[0] && product.price <= priceRange[1]);
-    
-    if (selectedRatings.length > 0) {
-      filtered = filtered.filter(product => selectedRatings.includes(Math.floor(product.rating)));
+    if (selectedDiscounts.length > 0) {
+      filtered = filtered.filter(product => {
+        const productDiscount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+        return selectedDiscounts.some(discount => productDiscount >= discount);
+      });
     }
     
+    filtered = filtered.filter(product => product.price >= priceRange[0] && product.price <= priceRange[1]);
+    
     setFilteredProducts(filtered);
-  };
+  }, [products, selectedBrands, selectedColors, selectedDiscounts, priceRange]);
 
   useEffect(() => {
     applyFilters();
-  }, [priceRange, selectedBrands, selectedColors, selectedRatings, category, subcategory]);
+  }, [applyFilters, selectedBrands, selectedColors, selectedDiscounts, priceRange]);
+
+  if (loading) {
+    return <div className="container mx-auto px-4 py-8">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="container mx-auto px-4 py-8">Error: {error}</div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -102,7 +110,7 @@ const ProductList = () => {
                 min="0"
                 max="2000"
                 value={priceRange[1]}
-                onChange={(e) => handlePriceChange(e, [0, parseInt(e.target.value)])}
+                onChange={handlePriceChange}
                 className="w-full"
               />
               <div className="flex justify-between mt-2">
@@ -140,16 +148,16 @@ const ProductList = () => {
               </div>
             </div>
             <div className="mb-6">
-              <h3 className="font-semibold mb-2">Ratings</h3>
-              {[5, 4, 3, 2, 1].map(rating => (
-                <label key={rating} className="flex items-center mb-2">
+              <h3 className="font-semibold mb-2">Discount</h3>
+              {discounts.map(discount => (
+                <label key={discount} className="flex items-center mb-2">
                   <input
                     type="checkbox"
-                    checked={selectedRatings.includes(rating)}
-                    onChange={() => handleRatingChange(rating)}
+                    checked={selectedDiscounts.includes(discount)}
+                    onChange={() => handleDiscountChange(discount)}
                     className="mr-2"
                   />
-                  {rating} Stars & Above
+                  {discount}% or more
                 </label>
               ))}
             </div>
@@ -162,7 +170,7 @@ const ProductList = () => {
             ))}
           </div>
           {filteredProducts.length === 0 && (
-            <p className="text-center text-gray-500 mt-8">No products found for this category with the selected filters.</p>
+            <p className="text-center text-gray-500 mt-8">No products found matching the selected filters.</p>
           )}
         </div>
       </div>

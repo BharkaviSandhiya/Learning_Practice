@@ -1,26 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { FaHeart, FaShoppingCart, FaMinus, FaPlus } from 'react-icons/fa';
+import { FaHeart, FaShoppingCart, FaMinus, FaPlus, FaStar } from 'react-icons/fa';
 import { addToCart } from '../store/slices/cartSlice';
 import { addToWishlist, removeFromWishlist } from '../store/slices/wishlistSlice';
 import Breadcrumb from '../components/Breadcrumb';
-import { products } from '../data/products';
+import { fetchProductDetails } from '../services/api';
 
 const ProductDetail = () => {
-  const { id } = useParams();
+  const { productName } = useParams();
   const dispatch = useDispatch();
-  const product = products.find(p => p.id === parseInt(id));
-  const wishlistItems = useSelector(state => state.wishlist);
-  const isInWishlist = wishlistItems.some(item => item.id === product?.id);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const wishlistItems = useSelector(state => state.wishlist.items);
+  const isInWishlist = product && Array.isArray(wishlistItems) && wishlistItems.some(item => item.id === product.id);
 
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [showSizeChart, setShowSizeChart] = useState(false);
+  const [reviewText, setReviewText] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviews, setReviews] = useState([]);
 
-  if (!product) {
-    return <div>Product not found</div>;
-  }
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        setLoading(true);
+        const productData = await fetchProductDetails(productName);
+        setProduct(productData);
+        setReviews(Array.isArray(productData?.reviews) ? productData.reviews : []);
+      } catch (err) {
+        setError('Failed to load product details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProduct();
+  }, [productName]);
+
+  if (loading) return <div className="container mx-auto px-4 py-8">Loading...</div>;
+  if (error) return <div className="container mx-auto px-4 py-8">Error: {error}</div>;
+  if (!product) return <div className="container mx-auto px-4 py-8">Product not found</div>;
 
   const handleAddToCart = () => {
     if (product.category === 'Clothing' && !selectedSize) {
@@ -36,6 +58,22 @@ const ProductDetail = () => {
     } else {
       dispatch(addToWishlist(product));
     }
+  };
+
+  const handleAddReview = () => {
+    if (reviewText.trim() === '') {
+      alert('Please enter a review');
+      return;
+    }
+    const newReview = {
+      id: Date.now(),
+      text: reviewText,
+      rating: reviewRating,
+      date: new Date().toISOString(),
+    };
+    setReviews(prevReviews => [...prevReviews, newReview]);
+    setReviewText('');
+    setReviewRating(5);
   };
 
   const getSizes = () => {
@@ -114,7 +152,7 @@ const ProductDetail = () => {
       <Breadcrumb category={product.category} subcategory={product.subcategory} product={product.title} />
       <div className="flex flex-col md:flex-row -mx-4">
         <div className="md:w-1/2 px-4 mb-8 md:mb-0">
-          <img src={product.image} alt={product.title} className="w-full h-auto max-h-96 object-contain" />
+          <img src={product.image} alt={product.title} className="w-full h-auto max-h-[500px] object-contain rounded-lg shadow-lg" />
         </div>
         <div className="md:w-1/2 px-4">
           <h1 className="text-3xl font-bold mb-4">{product.title}</h1>
@@ -126,7 +164,7 @@ const ProductDetail = () => {
                 </svg>
               ))}
             </div>
-            <span className="ml-2 text-gray-600">{product.rating.toFixed(1)} | {product.reviews} Ratings</span>
+            <span className="ml-2 text-gray-600">{product.rating.toFixed(1)} | {reviews.length} Ratings</span>
           </div>
           <div className="mb-4">
             <span className="text-2xl font-bold">₹{product.price.toFixed(2)}</span>
@@ -215,6 +253,54 @@ const ProductDetail = () => {
             <h2 className="text-lg font-semibold mb-2">Product Details</h2>
             <p className="text-gray-600">{product.description}</p>
           </div>
+        </div>
+      </div>
+      <div className="mt-12">
+        <h2 className="text-2xl font-bold mb-4">Customer Reviews</h2>
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">Write a Review</h3>
+          <div className="flex items-center mb-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <FaStar
+                key={star}
+                className={`cursor-pointer ${
+                  star <= reviewRating ? 'text-yellow-400' : 'text-gray-300'
+                }`}
+                onClick={() => setReviewRating(star)}
+              />
+            ))}
+          </div>
+          <textarea
+            value={reviewText}
+            onChange={(e) => setReviewText(e.target.value)}
+            className="w-full p-2 border rounded"
+            rows="4"
+            placeholder="Write your review here..."
+          ></textarea>
+          <button
+            onClick={handleAddReview}
+            className="mt-2 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+          >
+            Submit Review
+          </button>
+        </div>
+        <div>
+          {Array.isArray(reviews) && reviews.map((review) => (
+            <div key={review.id} className="border-b pb-4 mb-4">
+              <div className="flex items-center mb-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <FaStar
+                    key={star}
+                    className={star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}
+                  />
+                ))}
+              </div>
+              <p className="text-gray-600">{review.text}</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {new Date(review.date).toLocaleDateString()}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
